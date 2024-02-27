@@ -1,0 +1,27 @@
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS tagged_items;
+
+CREATE TABLE tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(255) NOT NULL,
+    image VARCHAR(255) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    body TEXT NOT NULL,
+    publish DATE NULL,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE TABLE tagged_items (
+    post_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    FOREIGN KEY (post_id) REFERENCES posts (id),
+    FOREIGN KEY (tag_id) REFERENCES tags (id)
+);
+
