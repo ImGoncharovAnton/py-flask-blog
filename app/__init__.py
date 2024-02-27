@@ -9,6 +9,9 @@ def create_app():
         UPLOAD_FOLDER='uploads'
     )
 
+    from app.users.views import bp as user_bp
+    app.register_blueprint(user_bp)
+
     from app import db
     db.init_app(app)
 
