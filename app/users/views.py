@@ -1,15 +1,52 @@
-from flask import render_template, url_for, session, Blueprint, redirect
+from flask import render_template, url_for, session, Blueprint, redirect, request, flash
+from app.db import get_db
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from app.utils import form_errors, validate
 
 bp = Blueprint('users', __name__)
 
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
-    return render_template('users/register.html')
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        if username and email and password:
+            hashed_password = generate_password_hash(password)
+            db = get_db()
+            query = ("""--sql
+            INSERT INTO users (username, email, password) 
+            VALUES ('%s', '%s', '%s')""" % (username, email, hashed_password))
+            db.execute(query)
+            db.commit()
+            flash('Account was created', category='success')
+            return redirect(url_for('users.login'))
+
+        # handle errors
+        error_fields = form_errors('username', 'email', 'password')
+        errors = validate(error_fields, username, email, password)
+        return render_template('users/register.html', errors=errors)
+    return render_template('users/register.html', errors=None)
 
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        db = get_db()
+        user = db.execute("""--sql
+        SELECT * FROM users WHERE username = ? OR email = ?""",
+                          (username, username)).fetchone()
+        if user is None or not check_password_hash(user['password'], password):
+            flash('Email or password incorrect', category='danger')
+            return render_template('users/login.html')
+        session.clear()
+        session['user_id'] = user['id']
+        return redirect(url_for('/'))
     return render_template('users/login.html')
 
 
