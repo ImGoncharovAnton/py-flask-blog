@@ -12,6 +12,9 @@ def create_app():
     from app.users.views import bp as user_bp
     app.register_blueprint(user_bp)
 
+    from app.blog.views import bp as blog_bp
+    app.register_blueprint(blog_bp)
+
     from app import db
     db.init_app(app)
 

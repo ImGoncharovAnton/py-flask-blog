@@ -1,6 +1,7 @@
-from flask import render_template, url_for, session, Blueprint, redirect, request, flash
+from flask import render_template, url_for, session, Blueprint, redirect, request, flash, g
 from app.db import get_db
 from werkzeug.security import generate_password_hash, check_password_hash
+import functools
 
 from app.utils import form_errors, validate
 
@@ -54,3 +55,25 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('users.login'))
+
+
+@bp.before_app_request
+def load_logged_in_user():
+    user_id = session.get('user_id')
+    if user_id is None:
+        g.user = None
+    else:
+        db = get_db()
+        user = db.execute("""--sql
+        SELECT * FROM users WHERE id = ?""", (user_id,)).fetchone()
+        g.user = user
+
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('users.login'))
+        return view(**kwargs)
+
+    return wrapped_view
