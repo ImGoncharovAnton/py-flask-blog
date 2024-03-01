@@ -47,7 +47,7 @@ def login():
             return render_template('users/login.html')
         session.clear()
         session['user_id'] = user['id']
-        return redirect(url_for('/'))
+        return redirect(url_for('blog.posts'))
     return render_template('users/login.html')
 
 

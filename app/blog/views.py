@@ -5,20 +5,19 @@ from app.db import get_db
 from app.users.views import login_required
 from app.utils import form_errors, validate
 from werkzeug.utils import secure_filename
-import os
 
 bp = Blueprint('blog', __name__)
 
 
 def save_image(file):
     filename = secure_filename(file.filename)
-    image_url = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    image_url = current_app.config['UPLOAD_FOLDER'] / filename
     file.save(image_url)
     return filename
 
 
 @bp.route('/')
-def get_posts():
+def posts():
     db = get_db()
     posts_list = db.execute("""--sql
     SELECT * FROM posts""").fetchall()
@@ -46,12 +45,13 @@ def post_create():
             filename = save_image(image)
             # create post
             query = """--sql
-            INSERT INTO posts (title, slug, image, body, publish, user_id) 
-            VALUES (%s, %s, %s, %s, %s, %s)""" % (title, slug, filename, body, publish, user_id)
+                      INSERT INTO posts (title, image, slug, body, publish, user_id) 
+                      VALUES ('%s', '%s', '%s', '%s', '%s', %s)""" % (
+                title, filename, slug, body, publish, user_id)
             db.execute(query)
             db.commit()
             flash('Post was created', category='success')
-            return redirect(url_for('blog.detail'))
+            return redirect(url_for('blog.post_detail', slug=slug))
 
         return render_template('blog/form.html', errors=errors, post=None, title='Create Post')
 

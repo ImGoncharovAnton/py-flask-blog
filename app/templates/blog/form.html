@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{#2.05#}
+{% block content %}
+    <div class="container">
+    <div class="col-md-8 offset-md-2">
+        <form action="" id="form" enctype="multipart/form-data" method="post">
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" name="title" id="title" class="form-control {% if errors.title %} is-invalid {% endif %}">
+                <div class="invalid-feedback">{{ errors.title }}</div>
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">Image</label>
+                <input type="file" name="image" id="image" class="form-control {% if errors.image %} is-invalid {% endif %}">
+                <div class="invalid-feedback">{{ errors.image }}</div>
+            </div>
+            <div class="mb-3">
+                <label for="body" class="form-label">Body</label>
+                <textarea name="body" id="body" class="form-control {% if errors.body %} is-invalid {% endif %}"></textarea>
+                <div class="invalid-feedback">{{ errors.body }}</div>
+            </div>
+            <div class="mb-3">
+                <label for="tags" class="form-label">Tags</label>
+                <input type="text" name="tags" id="tags" class="form-control {% if errors.tags %} is-invalid {% endif %}">
+                <div class="invalid-feedback">{{ errors.tags }}</div>
+            </div>
+            <div class="mb-3">
+                <label for="publish" class="form-label">Publish</label>
+                <input type="date" name="publish" id="publish" class="form-control {% if errors.publish %} is-invalid {% endif %}">
+                <div class="invalid-feedback">{{ errors.publish }}</div>
+            </div>
+            <hr>
+            <button class="btn btn-primary btn-lg">Save post</button>
+        </form>
+    </div>
+    </div>
+{% endblock content %}
