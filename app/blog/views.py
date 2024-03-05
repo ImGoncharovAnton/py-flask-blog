@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, g, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, g, current_app, abort
 
+from app.blog.tags import create_tags, update_tags, get_tags
 from app.blog.utils import slugify
 from app.db import get_db
 from app.users.views import login_required
@@ -50,6 +51,11 @@ def post_create():
                 title, filename, slug, body, publish, user_id)
             db.execute(query)
             db.commit()
+
+            post_id = db.execute("""--sql
+            SELECT id FROM posts WHERE slug=?""", (slug,)).fetchone()['id']
+
+            create_tags(tags.replace(' ', '').split(','), post_id)
             flash('Post was created', category='success')
             return redirect(url_for('blog.post_detail', slug=slug))
 
@@ -63,7 +69,10 @@ def post_detail(slug):
     db = get_db()
     post = db.execute("""--sql
     SELECT * FROM posts WHERE slug = ?""", (slug,)).fetchone()
-    return render_template('blog/detail.html', post=post)
+    if post is None:
+        abort(404)  # resource not found
+    tags = get_tags(post['id'])
+    return render_template('blog/detail.html', post=post, tags=tags)
 
 
 @bp.route('/<slug>/update', methods=['GET', 'POST'])
@@ -72,9 +81,12 @@ def post_update(slug):
     db = get_db()
     post = db.execute("""--sql
     SELECT * FROM posts WHERE slug = ?""", (slug,)).fetchone()
+
+    tags = get_tags(post['id'])
+
     if request.method == 'POST':
         title = request.form['title']
-        slug = slugify(title)
+        new_slug = slugify(title)
         image = request.files['image']
         body = request.form['body']
         publish = request.form['publish']
@@ -82,8 +94,8 @@ def post_update(slug):
         user_id = g.user['id']
 
         # handle errors
-        error_fields = form_errors('title', 'body', 'image', 'tags')
-        errors = validate(error_fields, title, body, image, tags)
+        error_fields = form_errors('title', 'body', 'tags')
+        errors = validate(error_fields, title, body, tags)
 
         if title and body and tags:
 
@@ -96,15 +108,18 @@ def post_update(slug):
             query = """--sql
             UPDATE posts SET title = '%s', slug = '%s', body = '%s',  publish = '%s'
             WHERE slug = '%s'
-            """ % (title, slug, body, publish, user_id)
+            """ % (title, new_slug, body, publish, slug)
             db.execute(query)
             db.commit()
+
+            update_tags(tags.replace(' ', '').split(','), post['id'])
+
             flash('Post was updated', category='success')
-            return redirect(url_for('blog.detail'))
+            return redirect(url_for('blog.post_detail', slug=new_slug))
 
-        return render_template('blog/form.html', errors=errors, title='Edit Post')
+        return render_template('blog/form.html', errors=errors, post=post, tags=tags, title='Edit Post')
 
-    return render_template('blog/form.html', errors=None, post=post, title='Edit Post')
+    return render_template('blog/form.html', errors=None, post=post, tags=tags, title='Edit Post')
 
 
 @bp.route('/<slug>/delete')

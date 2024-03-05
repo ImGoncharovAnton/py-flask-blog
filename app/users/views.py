@@ -54,6 +54,7 @@ def login():
 @bp.route('/logout')
 def logout():
     session.clear()
+    flash('You logged out', category='success')
     return redirect(url_for('users.login'))
 
 
