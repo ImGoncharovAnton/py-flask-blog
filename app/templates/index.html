@@ -3,6 +3,14 @@
 {% block content %}
 <div class="container">
     <div class="col-md-8 offset-md-2">
+        <form action="" method="get">
+            <div class="input-group mb-3">
+                <input type="text" name="q" id="q" class="form-control" placeholder="Find post">
+                <button class="btn btn-primary" type="submit">Go</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-8 offset-md-2">
         {% for post in posts %}
         <div class="row align-items-center">
             <div class="col-md-4">

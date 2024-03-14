@@ -6,6 +6,7 @@ from app.db import get_db
 from app.users.views import login_required
 from app.utils import form_errors, validate
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 bp = Blueprint('blog', __name__)
 
@@ -20,8 +21,25 @@ def save_image(file):
 @bp.route('/')
 def posts():
     db = get_db()
-    posts_list = db.execute("""--sql
-    SELECT * FROM posts""").fetchall()
+    q = request.args.get('q')  # get url params
+    search_query = f"""--sql
+            (title LIKE '%{q}%' OR body LIKE '%{q}%')"""
+
+    query = """--sql
+    SELECT * FROM posts WHERE publish <= '%s' AND publish != '' """ % datetime.now()
+
+    if q:
+        query += f"""--sql
+        AND {search_query}"""
+
+    if g.user and g.user['is_admin']:
+        query = """--sql
+        SELECT * FROM posts """
+        if q:
+            query += f"""--sql
+            WHERE {search_query}"""
+
+    posts_list = db.execute(query).fetchall()
     return render_template('index.html', posts=posts_list)
 
 
