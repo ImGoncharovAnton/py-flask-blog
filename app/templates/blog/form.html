@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-{#2.05#}
 {% block content %}
     <div class="container">
     <div class="col-md-8 offset-md-2">
@@ -19,7 +18,7 @@
             </div>
             <div class="mb-3">
                 <label for="body" class="form-label">Body</label>
-                <textarea name="body" id="body" class="form-control {% if errors.body %} is-invalid {% endif %}">
+                <textarea rows="10" name="body" id="body" class="form-control {% if errors.body %} is-invalid {% endif %}">
                 {{ post.body }}
                 </textarea>
                 <div class="invalid-feedback">{{ errors.body }}</div>
