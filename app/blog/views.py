@@ -56,7 +56,7 @@ def posts():
     ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
 
     posts_list = db.execute(query).fetchall()
-    return render_template('index.html', posts=posts_list, paginate=paginate)
+    return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date())
 
 
 @bp.route('/create', methods=['GET', 'POST'])

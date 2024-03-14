@@ -6,7 +6,7 @@
         <form action="" method="get">
             <div class="input-group mb-3">
                 <input type="text" name="q" id="q" class="form-control" placeholder="Find post" value="{{ request.args.q }}">
-                <button class="btn btn-primary" type="submit">Go</button>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
             </div>
         </form>
     </div>
@@ -14,18 +14,26 @@
         {% for post in posts %}
         <div class="row align-items-center">
             <div class="col-md-4">
-                <img src="{{ url_for('uploads', filename=post.image) }}" alt="" class="img-fluid">
+                <img src="{{ url_for('uploads', filename=post.image) }}" alt="" class="img-fluid rounded">
             </div>
             <div class="col-md-8">
-                <h3><a href="{{ url_for('blog.post_detail', slug=post.slug) }}">{{ post.title }}</a>
+                <h3>
+                    <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="text-decoration-none fw-bold">{{ post.title }}</a>
                 </h3>
+                {% if not post.publish %}
+                    <div class="badge text-danger border border-danger border-2"><i class="bi bi-pen me-1"></i>Draft</div>
+                {% else %}
+                    {% if post.publish > now %}
+                        <div class="badge text-dark border border-dark border-2"><i class="bi bi-clock me-1"></i>Schedule</div>
+                    {% endif %}
+                {% endif %}
                 <p>{{ post.body|truncate }}</p>
                 <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="btn btn-primary">Read more</a>
             </div>
         </div>
             <hr>
         {% endfor %}
-        <nav aria-label="Page navigation example">
+        <nav aria-label="Page navigation">
           <ul class="pagination">
             <li class="page-item">
               <a class="page-link" href="{{ request.path }}?page={{ paginate.prev_page }}{% if request.args.q %}&q={{ request.args.q }}{% endif %}" aria-label="Previous">
@@ -43,19 +51,5 @@
           </ul>
         </nav>
     </div>
-
-{#<nav aria-label="Page navigation example">#}
-{#  <ul class="pagination justify-content-center">#}
-{#    <li class="page-item disabled">#}
-{#      <a class="page-link">Previous</a>#}
-{#    </li>#}
-{#    <li class="page-item"><a class="page-link" href="#">1</a></li>#}
-{#    <li class="page-item"><a class="page-link" href="#">2</a></li>#}
-{#    <li class="page-item"><a class="page-link" href="#">3</a></li>#}
-{#    <li class="page-item">#}
-{#      <a class="page-link" href="#">Next</a>#}
-{#    </li>#}
-{#  </ul>#}
-{#</nav>#}
 </div>
 {% endblock content %}
