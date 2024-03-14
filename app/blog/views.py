@@ -28,6 +28,8 @@ def posts():
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def post_create():
+    if not g.user['is_admin']:
+        abort(403)
     if request.method == 'POST':
         title = request.form['title']
         slug = slugify(title)
@@ -78,6 +80,8 @@ def post_detail(slug):
 @bp.route('/<slug>/update', methods=['GET', 'POST'])
 @login_required
 def post_update(slug):
+    if not g.user['is_admin']:
+        abort(403)
     db = get_db()
     post = db.execute("""--sql
     SELECT * FROM posts WHERE slug = ?""", (slug,)).fetchone()
@@ -124,6 +128,8 @@ def post_update(slug):
 
 @bp.route('/<slug>/delete')
 def delete_post(slug):
+    if not g.user['is_admin']:
+        abort(403)
     db = get_db()
     db.execute("""--sql
     DELETE FROM posts WHERE slug = ?""", (slug,))

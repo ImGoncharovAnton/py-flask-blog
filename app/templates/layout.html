@@ -22,11 +22,11 @@
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('users.logout') }}">Log Out</a>
               </li>
-                {% if post %}
+                {% if post and g.user['is_admin'] %}
                     <li class="nav-item">
                       <a class="nav-link btn btn-warning" href="{{ url_for('blog.post_update', slug=post.slug) }}">Edit Post</a>
                     </li>
-                {% else %}
+                {% elif g.user['is_admin'] %}
                     <li class="nav-item">
                       <a class="nav-link btn btn-primary" href="{{ url_for('blog.post_create') }}">Create Post</a>
                     </li>

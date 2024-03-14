@@ -3,7 +3,7 @@ import click
 from pathlib import Path
 from flask import current_app, g
 from flask.cli import with_appcontext
-
+from werkzeug.security import generate_password_hash
 
 def get_db():
     if 'db' not in g:
@@ -30,13 +30,29 @@ def create_db():
             db.executescript(f.read())
 
 
+def create_admin(email, password):
+    db = get_db()
+    hashed_password = generate_password_hash(password)
+    db.execute("""--sql
+    INSERT INTO users (email, password, is_admin) VALUES (?, ?, 1)""", (email, hashed_password))
+    db.commit()
+
+
 @click.command('create-db')
 @with_appcontext
 def db_command():
     create_db()
     click.echo('Created database successfully!')
 
+@click.command('create-admin')
+@with_appcontext
+def admin_command():
+    email = click.prompt('Email', default='admin@localhost')
+    password = click.prompt('Password', hide_input=True)
+    create_admin(email, password)
+    click.echo('Admin was created')
 
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(db_command)
+    app.cli.add_command(admin_command)
