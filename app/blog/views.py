@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, g, current_app, abort
 
 from app.blog.tags import create_tags, update_tags, get_tags
-from app.blog.utils import slugify
+from app.blog.utils import slugify, pagination
 from app.db import get_db
 from app.users.views import login_required
 from app.utils import form_errors, validate
@@ -25,22 +25,38 @@ def posts():
     search_query = f"""--sql
             (title LIKE '%{q}%' OR body LIKE '%{q}%')"""
 
+    # Post queries
     query = """--sql
     SELECT * FROM posts WHERE publish <= '%s' AND publish != '' """ % datetime.now()
+    count_query = query.replace('*', 'COUNT(*)')
 
-    if q:
+    if q:  # modify queries for search
         query += f"""--sql
         AND {search_query}"""
+        count_query += f"""--sql
+        AND {search_query}"""
 
+    # Admin query: Retrive all posts
     if g.user and g.user['is_admin']:
         query = """--sql
         SELECT * FROM posts """
-        if q:
+        count_query = query.replace('*', 'COUNT(*)')
+        if q:  # modify admin user post queries for search
             query += f"""--sql
             WHERE {search_query}"""
+            count_query += f"""--sql
+            WHERE {search_query}"""
+
+    # Pagination
+    page = request.args.get('page') or 1
+    count = db.execute(count_query).fetchone()[0]
+    paginate = pagination(count, int(page))
+
+    query += """--sql
+    ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
 
     posts_list = db.execute(query).fetchall()
-    return render_template('index.html', posts=posts_list)
+    return render_template('index.html', posts=posts_list, paginate=paginate)
 
 
 @bp.route('/create', methods=['GET', 'POST'])
