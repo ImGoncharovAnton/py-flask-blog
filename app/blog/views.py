@@ -7,9 +7,9 @@ from app.users.views import login_required
 from app.utils import form_errors, validate
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import markdown
 
 bp = Blueprint('blog', __name__)
-
 
 def save_image(file):
     filename = secure_filename(file.filename)
@@ -17,6 +17,10 @@ def save_image(file):
     file.save(image_url)
     return filename
 
+
+@bp.app_template_filter('markdown')
+def convert_markdown(content):
+    return markdown.markdown(content)
 
 @bp.route('/')
 def posts():
@@ -167,5 +171,6 @@ def delete_post(slug):
     db = get_db()
     db.execute("""--sql
     DELETE FROM posts WHERE slug = ?""", (slug,))
+    db.commit()
     flash('Post was deleted', category='danger')
     return redirect(url_for('blog.posts'))

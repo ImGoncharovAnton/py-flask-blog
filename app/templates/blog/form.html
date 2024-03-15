@@ -1,41 +1,74 @@
 {% extends "layout.html" %}
+
+{% block head_extra %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+{% endblock head_extra %}
+
+{% block javascript %}
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script>
+        const simpleMDE = new SimpleMDE({ spellChecker: false });
+    </script>
+{% endblock javascript %}
+
 {% block content %}
-    <div class="container">
-    <div class="col-md-8 offset-md-2">
-        <form action="" id="form" enctype="multipart/form-data" method="post">
-            <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <input type="text" name="title" id="title" class="form-control {% if errors.title %} is-invalid {% endif %}" value="{{ post.title }}">
-                <div class="invalid-feedback">{{ errors.title }}</div>
-            </div>
-            <div class="mb-3">
-                <label for="image" class="form-label">Image</label>
-                {% if post %}
-                <a href="{{ url_for('uploads', filename=post.image) }}">{{ url_for('uploads', filename=post.image) }}</a>
-                {% endif %}
-                <input type="file" name="image" id="image" class="form-control {% if errors.image %} is-invalid {% endif %}">
-                <div class="invalid-feedback">{{ errors.image }}</div>
-            </div>
-            <div class="mb-3">
-                <label for="body" class="form-label">Body</label>
-                <textarea rows="10" name="body" id="body" class="form-control {% if errors.body %} is-invalid {% endif %}">
-                {{ post.body }}
-                </textarea>
-                <div class="invalid-feedback">{{ errors.body }}</div>
-            </div>
-            <div class="mb-3">
-                <label for="tags" class="form-label">Tags</label>
-                <input type="text" name="tags" id="tags" class="form-control {% if errors.tags %} is-invalid {% endif %}" value="{{ ','.join(tags) }}">
-                <div class="invalid-feedback">{{ errors.tags }}</div>
-            </div>
-            <div class="mb-3">
-                <label for="publish" class="form-label">Publish</label>
-                <input type="date" name="publish" id="publish" class="form-control {% if errors.publish %} is-invalid {% endif %}" value="{{ post.publish }}">
-                <div class="invalid-feedback">{{ errors.publish }}</div>
-            </div>
-            <hr>
-            <button class="btn btn-primary btn-lg">Save post</button>
-        </form>
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Post</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+           Are you sure you want to delete this post?
+          </div>
+          <div class="modal-footer">
+            <a href="{{ url_for('blog.delete_post', slug=post.slug) }}" class="btn btn-danger">Yes</a>
+          </div>
+        </div>
+      </div>
     </div>
+    <div class="container">
+        <div class="col-md-8 offset-md-2">
+            <form action="" id="form" enctype="multipart/form-data" method="post">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" name="title" id="title" class="form-control {% if errors.title %} is-invalid {% endif %}" value="{{ post.title }}">
+                    <div class="invalid-feedback">{{ errors.title }}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="image" class="form-label">Image</label>
+                    {% if post %}
+                    <a href="{{ url_for('uploads', filename=post.image) }}">{{ url_for('uploads', filename=post.image) }}</a>
+                    {% endif %}
+                    <input type="file" name="image" id="image" class="form-control {% if errors.image %} is-invalid {% endif %}">
+                    <div class="invalid-feedback">{{ errors.image }}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="body" class="form-label">Body</label>
+                    <textarea rows="10" name="body" id="body" class="form-control {% if errors.body %} is-invalid {% endif %}">{{ post.body }}</textarea>
+                    <div class="invalid-feedback">{{ errors.body }}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="tags" class="form-label">Tags</label>
+                    <input type="text" name="tags" id="tags" class="form-control {% if errors.tags %} is-invalid {% endif %}" value="{{ ','.join(tags) }}">
+                    <div class="invalid-feedback">{{ errors.tags }}</div>
+                </div>
+                <div class="mb-3">
+                    <label for="publish" class="form-label">Publish</label>
+                    <input type="date" name="publish" id="publish" class="form-control {% if errors.publish %} is-invalid {% endif %}" value="{{ post.publish }}">
+                    <div class="invalid-feedback">{{ errors.publish }}</div>
+                </div>
+                <hr>
+                <button class="btn btn-primary btn-lg">Save post</button>
+            </form>
+            {% if 'update' in request.url %}
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                  Delete
+                </button>
+            {% endif %}
+        </div>
     </div>
 {% endblock content %}
