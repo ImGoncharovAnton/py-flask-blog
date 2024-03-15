@@ -11,6 +11,7 @@ import markdown
 
 bp = Blueprint('blog', __name__)
 
+
 def save_image(file):
     filename = secure_filename(file.filename)
     image_url = current_app.config['UPLOAD_FOLDER'] / filename
@@ -21,6 +22,12 @@ def save_image(file):
 @bp.app_template_filter('markdown')
 def convert_markdown(content):
     return markdown.markdown(content)
+
+
+@bp.app_template_filter('dateformat')
+def dateformat(date):
+    return date.strftime('%a %d, %B %Y')
+
 
 @bp.route('/')
 def posts():

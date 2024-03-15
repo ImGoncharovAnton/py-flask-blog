@@ -1,5 +1,9 @@
 {% extends "layout.html" %}
 
+{% block page_header %}
+    {{ title }}
+{% endblock page_header %}
+
 {% block head_extra %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
 {% endblock head_extra %}
@@ -61,14 +65,15 @@
                     <div class="invalid-feedback">{{ errors.publish }}</div>
                 </div>
                 <hr>
-                <button class="btn btn-primary btn-lg">Save post</button>
+                <button class="btn btn-primary btn-lg float-start">Save post</button>
             </form>
             {% if 'update' in request.url %}
                 <!-- Button trigger modal -->
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <button type="button" class="btn btn-danger btn-lg float-end" data-bs-toggle="modal" data-bs-target="#exampleModal">
                   Delete
                 </button>
             {% endif %}
+            <div class="clearfix"></div>
         </div>
     </div>
 {% endblock content %}
