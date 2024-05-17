@@ -29,6 +29,47 @@ def dateformat(date):
     return date.strftime('%a %d, %B %Y')
 
 
+# @bp.route('/')
+# def posts():
+#     db = get_db()
+#     q = request.args.get('q')  # get url params
+#     search_query = f"""--sql
+#             (title LIKE '%{q}%' OR body LIKE '%{q}%')"""
+#
+#     # Post queries
+#     query = """--sql
+#     SELECT * FROM posts WHERE publish <= '%s' AND publish != '' """ % datetime.now()
+#     count_query = query.replace('*', 'COUNT(*)')
+#
+#     if q:  # modify queries for search
+#         query += f"""--sql
+#         AND {search_query}"""
+#         count_query += f"""--sql
+#         AND {search_query}"""
+#
+#     # Admin query: Retrive all posts
+#     if g.user and g.user['is_admin']:
+#         query = """--sql
+#         SELECT * FROM posts """
+#         count_query = query.replace('*', 'COUNT(*)')
+#         if q:  # modify admin user post queries for search
+#             query += f"""--sql
+#             WHERE {search_query}"""
+#             count_query += f"""--sql
+#             WHERE {search_query}"""
+#
+#     # Pagination
+#     page = request.args.get('page') or 1
+#     count = db.execute(count_query).fetchone()[0]
+#     paginate = pagination(count, int(page))
+#
+#     query += """--sql
+#     ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
+#
+#     posts_list = db.execute(query).fetchall()
+#     return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date())
+
+
 @bp.route('/')
 def posts():
     db = get_db()
@@ -47,7 +88,7 @@ def posts():
         count_query += f"""--sql
         AND {search_query}"""
 
-    # Admin query: Retrive all posts
+    # Admin query: Retrieve all posts
     if g.user and g.user['is_admin']:
         query = """--sql
         SELECT * FROM posts """
@@ -67,6 +108,20 @@ def posts():
     ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
 
     posts_list = db.execute(query).fetchall()
+
+    # Convert sqlite3.Row objects to dictionaries
+    posts_list = [dict(post) for post in posts_list]
+
+    # Fetch tags and comments count for each post
+    for post in posts_list:
+        post_id = post['id']
+        post['tags'] = get_tags(post_id)
+        post['comment_count'] = db.execute("""
+            SELECT COUNT(*) 
+            FROM comments 
+            WHERE post_id = ?
+        """, (post_id,)).fetchone()[0]
+
     return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date())
 
 

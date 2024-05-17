@@ -17,45 +17,49 @@
                     <li class="badge text-bg-secondary">{{ tag }}</li>
                 {% endfor %}
             </ul>
+            {% if g.user %}
+                <form action="" method="POST">
+                    <div class="mb-3">
+                        <label for="comment" class="form-label visually-hidden">Comment</label>
+                        <textarea name="comment" id="comment" cols="30" rows="5" class="form-control"></textarea>
+                    </div>
+                    <button class="btn btn-primary">Comment</button>
+                </form>
+            {% else %}
+                <div class="fs-4 text-center"><a href="{{ url_for('users.login') }}" class="text-decoration-none">Log in
+                    to comment</a></div>
+            {% endif %}
+
+            {% for comment in comments %}
+                <div class="d-flex mt-5 align-items-center">
+                    <div class="me-3">
+                        <div class="avatar fw-bold fs-3 rounded-circle d-flex justify-content-center align-items-center">
+                            <span>{{ comment.username[0] }}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div>{{ comment.body }}</div>
+                        <blockquote class="blockquote fs-6">
+                            by {{ comment.username }} on {{ comment.created|dateformat }}
+                            {% if comment.updated != comment.created %}
+                                (edited on {{ comment.updated|dateformat }})
+                            {% endif %}
+                        </blockquote>
+                        {% if g.user and (g.user['id'] == comment.user_id or g.user['is_admin']) %}
+                            <a href="{{ url_for('blog.edit_comment', comment_id=comment.id) }}"
+                               class="btn btn-sm btn-outline-primary">Edit</a>
+                            <form action="{{ url_for('blog.delete_comment', comment_id=comment.id) }}" method="post"
+                                  style="display:inline;">
+                                <input type="hidden" name="slug" value="{{ post.slug }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr>
+            {% endfor %}
         </div>
     </div>
 
-    {% if g.user %}
-        <form action="" method="POST">
-            <div class="mb-3">
-                <label for="comment" class="form-label visually-hidden">Comment</label>
-                <textarea name="comment" id="comment" cols="30" rows="5" class="form-control"></textarea>
-            </div>
-            <button class="btn btn-primary">Comment</button>
-        </form>
-    {% else %}
-        <div class="fs-4 text-center"><a href="{{ url_for('users.login') }}" class="text-decoration-none">Log in to comment</a></div>
-    {% endif %}
 
-    {% for comment in comments %}
-        <div class="d-flex mt-5 align-items-center">
-            <div class="me-3">
-                <div class="avatar fw-bold fs-3 rounded-circle d-flex justify-content-center align-items-center">
-                    <span>{{ comment.username[0] }}</span>
-                </div>
-            </div>
-            <div>
-                <div>{{ comment.body }}</div>
-                <blockquote class="blockquote fs-6">
-                    by {{ comment.username }} on {{ comment.created|dateformat }}
-                    {% if comment.updated != comment.created %}
-                        (edited on {{ comment.updated|dateformat }})
-                    {% endif %}
-                </blockquote>
-                {% if g.user and (g.user['id'] == comment.user_id or g.user['is_admin']) %}
-                    <a href="{{ url_for('blog.edit_comment', comment_id=comment.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                    <form action="{{ url_for('blog.delete_comment', comment_id=comment.id) }}" method="post" style="display:inline;">
-                        <input type="hidden" name="slug" value="{{ post.slug }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                    </form>
-                {% endif %}
-            </div>
-        </div>
-        <hr>
-    {% endfor %}
 {% endblock content %}
