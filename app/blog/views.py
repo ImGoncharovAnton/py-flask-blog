@@ -111,15 +111,66 @@ def post_create():
     return render_template('blog/form.html', errors=None, post=None, title='Create Post')
 
 
-@bp.route('/<slug>')
+@bp.route('/<slug>', methods=['GET', 'POST'])
 def post_detail(slug):
     db = get_db()
     post = db.execute("""--sql
     SELECT * FROM posts WHERE slug = ?""", (slug,)).fetchone()
+
     if post is None:
         abort(404)  # resource not found
+
+    if request.method == 'POST' and g.user:
+        comment_body = request.form['comment']
+        print(comment_body)
+        if comment_body:
+            db.execute("INSERT INTO comments (body, user_id, post_id) VALUES (?, ?, ?)",
+                       (comment_body, g.user['id'], post['id']))
+            db.commit()
+            flash('Your comment was created', category='success')
+            return redirect(url_for('blog.post_detail', slug=slug))
+
+    comments = db.execute("""SELECT comments.*, users.username FROM comments 
+                                 JOIN users ON comments.user_id = users.id 
+                                 WHERE post_id = ? ORDER BY created DESC""",
+                          (post['id'],)).fetchall()
+
     tags = get_tags(post['id'])
-    return render_template('blog/detail.html', post=post, tags=tags)
+    return render_template('blog/detail.html', post=post, tags=tags, comments=comments)
+
+
+@bp.route('/edit_comment/<int:comment_id>', methods=['GET', 'POST'])
+def edit_comment(comment_id):
+    db = get_db()
+    comment = db.execute("SELECT * FROM comments WHERE id = ?", (comment_id,)).fetchone()
+
+    if comment is None or (comment['user_id'] != g.user['id'] and not g.user['is_admin']):
+        abort(403)  # permission denied
+
+    if request.method == 'POST':
+        new_body = request.form['comment']
+        slug = request.form['slug']
+        db.execute("UPDATE comments SET body = ?, updated = CURRENT_TIMESTAMP WHERE id = ?", (new_body, comment_id))
+        db.commit()
+        flash('Your comment was updated', category='success')
+        return redirect(url_for('blog.post_detail', slug=slug))
+
+    post = db.execute("SELECT slug FROM posts WHERE id = ?", (comment['post_id'],)).fetchone()
+    return render_template('blog/edit_comment.html', comment=comment, slug=post['slug'])
+
+
+@bp.route('/delete_comment/<int:comment_id>', methods=['POST'])
+def delete_comment(comment_id):
+    db = get_db()
+    comment = db.execute("SELECT * FROM comments WHERE id = ?", (comment_id,)).fetchone()
+
+    if comment is None or (comment['user_id'] != g.user['id'] and not g.user['is_admin']):
+        abort(403)  # permission denied
+
+    db.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
+    db.commit()
+    flash('Your comment was deleted', category='danger')
+    return redirect(url_for('blog.post_detail', slug=request.form['slug']))
 
 
 @bp.route('/<slug>/update', methods=['GET', 'POST'])

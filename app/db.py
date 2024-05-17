@@ -5,6 +5,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 
+
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(
@@ -44,6 +45,7 @@ def db_command():
     create_db()
     click.echo('Created database successfully!')
 
+
 @click.command('create-admin')
 @with_appcontext
 def admin_command():
@@ -51,6 +53,7 @@ def admin_command():
     password = click.prompt('Password', hide_input=True)
     create_admin(email, password)
     click.echo('Admin was created')
+
 
 def init_app(app):
     app.teardown_appcontext(close_db)

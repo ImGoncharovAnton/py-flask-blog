@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="col-md-8 offset-md-2">
+            <h2>Edit Comment</h2>
+            <form action="" method="POST">
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Comment</label>
+                    <textarea name="comment" id="comment" cols="30" rows="5" class="form-control">{{ comment.body }}</textarea>
+                </div>
+                <input type="hidden" name="slug" value="{{ slug }}">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
