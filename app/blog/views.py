@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, g, current_app, abort
 
-from app.blog.tags import create_tags, update_tags, get_tags
+from app.blog.tags import create_tags, update_tags, get_tags, get_all_tags
 from app.blog.utils import slugify, pagination
 from app.db import get_db
 from app.users.views import login_required
@@ -29,100 +29,106 @@ def dateformat(date):
     return date.strftime('%a %d, %B %Y')
 
 
-# @bp.route('/')
-# def posts():
-#     db = get_db()
-#     q = request.args.get('q')  # get url params
-#     search_query = f"""--sql
-#             (title LIKE '%{q}%' OR body LIKE '%{q}%')"""
-#
-#     # Post queries
-#     query = """--sql
-#     SELECT * FROM posts WHERE publish <= '%s' AND publish != '' """ % datetime.now()
-#     count_query = query.replace('*', 'COUNT(*)')
-#
-#     if q:  # modify queries for search
-#         query += f"""--sql
-#         AND {search_query}"""
-#         count_query += f"""--sql
-#         AND {search_query}"""
-#
-#     # Admin query: Retrive all posts
-#     if g.user and g.user['is_admin']:
-#         query = """--sql
-#         SELECT * FROM posts """
-#         count_query = query.replace('*', 'COUNT(*)')
-#         if q:  # modify admin user post queries for search
-#             query += f"""--sql
-#             WHERE {search_query}"""
-#             count_query += f"""--sql
-#             WHERE {search_query}"""
-#
-#     # Pagination
-#     page = request.args.get('page') or 1
-#     count = db.execute(count_query).fetchone()[0]
-#     paginate = pagination(count, int(page))
-#
-#     query += """--sql
-#     ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
-#
-#     posts_list = db.execute(query).fetchall()
-#     return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date())
-
-
 @bp.route('/')
 def posts():
     db = get_db()
-    q = request.args.get('q')  # get url params
-    search_query = f"""--sql
-            (title LIKE '%{q}%' OR body LIKE '%{q}%')"""
+    q = request.args.get('q')
+    tag_name = request.args.get('tag')
 
-    # Post queries
-    query = """--sql
-    SELECT * FROM posts WHERE publish <= '%s' AND publish != '' """ % datetime.now()
+    # Base query
+    query = "SELECT * FROM posts WHERE publish <= ? AND publish != ''"
     count_query = query.replace('*', 'COUNT(*)')
 
-    if q:  # modify queries for search
-        query += f"""--sql
-        AND {search_query}"""
-        count_query += f"""--sql
-        AND {search_query}"""
+    # Add search query
+    if q:
+        search_query = "(title LIKE ? OR body LIKE ?)"
+        query += f" AND {search_query}"
+        count_query += f" AND {search_query}"
 
-    # Admin query: Retrieve all posts
-    if g.user and g.user['is_admin']:
-        query = """--sql
-        SELECT * FROM posts """
-        count_query = query.replace('*', 'COUNT(*)')
-        if q:  # modify admin user post queries for search
-            query += f"""--sql
-            WHERE {search_query}"""
-            count_query += f"""--sql
-            WHERE {search_query}"""
+    # Add tag filter query
+    if tag_name:
+        tag_filter_query = "id IN (SELECT post_id FROM tagged_items INNER JOIN tags ON tags.id = tag_id WHERE tags.name = ?)"
+        query += f" AND {tag_filter_query}"
+        count_query += f" AND {tag_filter_query}"
+
+    # Query parameters
+    now = datetime.now()
+    params = [now]
+    if q:
+        params.extend([f"%{q}%", f"%{q}%"])
+    if tag_name:
+        params.append(tag_name)
 
     # Pagination
-    page = request.args.get('page') or 1
-    count = db.execute(count_query).fetchone()[0]
-    paginate = pagination(count, int(page))
+    page = int(request.args.get('page', 1))
+    per_page = 2
+    total_count = db.execute(count_query, params).fetchone()[0]
+    paginate = pagination(total_count, page, per_page)
+    query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    params.extend([paginate['per_page'], paginate['offset']])
 
-    query += """--sql
-    ORDER BY id DESC LIMIT %s OFFSET %s""" % (paginate['per_page'], paginate['offset'])
-
-    posts_list = db.execute(query).fetchall()
-
-    # Convert sqlite3.Row objects to dictionaries
+    # Fetch posts
+    posts_list = db.execute(query, params).fetchall()
     posts_list = [dict(post) for post in posts_list]
 
-    # Fetch tags and comments count for each post
+    # Fetch tags and comment counts for each post
     for post in posts_list:
         post_id = post['id']
         post['tags'] = get_tags(post_id)
-        post['comment_count'] = db.execute("""
-            SELECT COUNT(*) 
-            FROM comments 
-            WHERE post_id = ?
-        """, (post_id,)).fetchone()[0]
+        post['comment_count'] = db.execute(
+            "SELECT COUNT(*) FROM comments WHERE post_id = ?", (post_id,)
+        ).fetchone()[0]
 
-    return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date())
+    # Fetch all tags for display
+    all_tags = db.execute("SELECT name FROM tags").fetchall()
+    all_tags = [tag['name'] for tag in all_tags]
+
+    return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date(), all_tags=all_tags)
+
+
+@bp.route('/tag/<tag_name>')
+def posts_by_tag(tag_name):
+    db = get_db()
+
+    # Base query
+    query = "SELECT * FROM posts WHERE publish <= ? AND publish != ''"
+    count_query = query.replace('*', 'COUNT(*)')
+
+    # Add tag filter query
+    tag_filter_query = "id IN (SELECT post_id FROM tagged_items INNER JOIN tags ON tags.id = tag_id WHERE tags.name = ?)"
+    query += f" AND {tag_filter_query}"
+    count_query += f" AND {tag_filter_query}"
+
+    # Query parameters
+    now = datetime.now()
+    params = [now, tag_name]
+
+    # Pagination
+    page = int(request.args.get('page', 1))
+    per_page = 2
+    total_count = db.execute(count_query, params).fetchone()[0]
+    paginate = pagination(total_count, page, per_page)
+    query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    params.extend([paginate['per_page'], paginate['offset']])
+
+    # Fetch posts
+    posts_list = db.execute(query, params).fetchall()
+    posts_list = [dict(post) for post in posts_list]
+
+    # Fetch tags and comment counts for each post
+    for post in posts_list:
+        post_id = post['id']
+        post['tags'] = get_tags(post_id)
+        post['comment_count'] = db.execute(
+            "SELECT COUNT(*) FROM comments WHERE post_id = ?", (post_id,)
+        ).fetchone()[0]
+
+    # Fetch all tags for display
+    all_tags = db.execute("SELECT name FROM tags").fetchall()
+    all_tags = [tag['name'] for tag in all_tags]
+
+    return render_template('index.html', posts=posts_list, paginate=paginate, now=datetime.now().date(), all_tags=all_tags)
+
 
 
 @bp.route('/create', methods=['GET', 'POST'])

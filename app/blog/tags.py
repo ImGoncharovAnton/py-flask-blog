@@ -40,3 +40,11 @@ def get_tags(post_id):
     tag_id WHERE posts.id = %s""" % post_id
     tags = db.execute(query).fetchall()
     return list(map(lambda tag: tag['name'], tags))
+
+
+# Get all tags for index.html
+def get_all_tags(db):
+    query = """--sql
+    SELECT name FROM tags"""
+    tags = db.execute(query).fetchall()
+    return [tag['name'] for tag in tags]

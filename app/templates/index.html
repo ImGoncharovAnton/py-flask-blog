@@ -6,13 +6,27 @@
     <div class="col-md-8 offset-md-2">
         <form action="" method="get">
             <div class="input-group mb-3">
-                <input type="text" name="q" id="q" class="form-control" placeholder="Find post" value="{{ request.args.q }}">
+                <input type="text" name="q" id="q" class="form-control" placeholder="Enter text" value="{{ request.args.q }}">
                 <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                {% if request.args.q %}
+                    <a href="{{ url_for('blog.posts') }}" class="btn close" aria-label="Close"><span aria-hidden="true">&times;</span></a>
+                {% endif %}
             </div>
         </form>
     </div>
     {% endif %}
     <div class="col-md-8 offset-md-2">
+        <div class="mb-3">
+            <h5>Tags:</h5>
+             <ul class="list-unstyled mt-2">
+                {% for tag in all_tags %}
+                     <li class="badge text-bg-secondary"><a href="{{ url_for('blog.posts_by_tag', tag_name=tag) }}">{{ tag }}</a></li>
+                {% endfor %}
+             </ul>
+            {% if request.args.tag %}
+                <a href="{{ url_for('blog.posts') }}" class="btn close" aria-label="Close"><span aria-hidden="true">&times;</span></a>
+            {% endif %}
+        </div>
         {% if posts %}
             {% for post in posts %}
             <div class="row align-items-center">
@@ -73,3 +87,5 @@
     </div>
 </div>
 {% endblock content %}
+
+
